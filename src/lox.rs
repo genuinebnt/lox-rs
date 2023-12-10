@@ -1,8 +1,8 @@
-use crate::scanner::*;
+use crate::lexer::*;
 
 pub enum LoxError {
     IoError(std::io::Error),
-    ScannerError,
+    LexError,
 }
 
 impl From<std::io::Error> for LoxError {
@@ -24,10 +24,8 @@ impl Lox {
         Ok(())
     }
 
-    fn run(&self) -> Result<(), ScannerError> {
-        let mut scanner = Scanner::new();
-
-        scanner.scan_tokens(&self.contents);
+    fn run(&self) -> Result<(), LexError> {
+        let mut lexer = Lexer::new(&self.contents);
 
         Ok(())
     }

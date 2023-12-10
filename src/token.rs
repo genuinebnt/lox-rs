@@ -1,5 +1,5 @@
-#[derive(Debug)]
-enum TokenKind {
+#[derive(Debug, PartialEq)]
+pub enum TokenKind {
     // one char tokens
     LeftParen,
     RightParen,
@@ -46,18 +46,25 @@ enum TokenKind {
     Var,
     While,
     Eof,
+    Unimplemented(char),
 
     Comment(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Token {
     kind: TokenKind,
     span: Span,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Span {
     start: usize,
     end: usize,
+}
+
+impl Token {
+    pub fn new(kind: TokenKind, span: Span) -> Token {
+        Token { kind, span }
+    }
 }

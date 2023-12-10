@@ -1,5 +1,5 @@
 mod lox;
-mod scanner;
+mod lexer;
 mod token;
 
 fn main() {
