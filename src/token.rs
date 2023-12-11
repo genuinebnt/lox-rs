@@ -63,6 +63,12 @@ pub struct Span {
     end: usize,
 }
 
+impl Span {
+    pub fn new(start: usize, end: usize) -> Self {
+        Span { start, end }
+    }
+}
+
 impl Token {
     pub fn new(kind: TokenKind, span: Span) -> Token {
         Token { kind, span }

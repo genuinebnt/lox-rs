@@ -24,7 +24,7 @@ impl Lox {
         Ok(())
     }
 
-    fn run(&self) -> Result<(), LexError> {
+    fn run(&self) -> Result<(), LoxError> {
         let mut lexer = Lexer::new(&self.contents);
 
         Ok(())
