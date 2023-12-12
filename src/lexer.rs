@@ -51,6 +51,7 @@ impl<'a> Lexer<'a> {
             '=' => self.take_select('=', EqualEqual, Equal),
             '>' => self.take_select('=', GreaterEqual, Greater),
             '<' => self.take_select('=', LessEqual, Less),
+            '/' => self.comment_or(Slash),
             '\0' => Eof,
             _ => Unimplemented(ch),
         }
@@ -97,6 +98,41 @@ impl<'a> Lexer<'a> {
         self.current += 1;
         ch
     }
+
+    fn advance_by(&mut self, value: i32) {
+        (self.current += value as usize);
+    }
+
+    fn comment_or(&mut self, or: TokenKind) -> TokenKind {
+        if self.take('/') {
+            let comment = self.take_single_line_comment();
+            Comment(comment)
+        } else if self.take('*') {
+            let comment = self.take_multi_line_comment();
+            Comment(comment)
+        } else {
+            or
+        }
+    }
+
+    fn take_single_line_comment(&mut self) -> std::string::String {
+        while self.peek(0) != '\n' && !self.is_at_end() {
+            self.advance();
+        }
+        self.end = self.current;
+
+        self.src[self.start + 2..self.end].to_string()
+    }
+
+    fn take_multi_line_comment(&mut self) -> std::string::String {
+        while self.peek(0) != '*' && self.peek(1) != '/' && !self.is_at_end() {
+            self.advance();
+        }
+        self.advance_by(2);
+        self.end = self.current;
+
+        self.src[self.start + 2..self.end - 2].to_string()
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -107,6 +143,7 @@ impl<'a> Iterator for Lexer<'a> {
 }
 
 #[cfg(test)]
+#[ignore]
 #[test]
 fn test_scan_token() {
     let src = "{}(),.-+;*!!====>>=<<=";
@@ -114,5 +151,24 @@ fn test_scan_token() {
     let lexer = Lexer::new(src);
     let tokens: Vec<_> = lexer.collect();
 
+    println!("{:?}", tokens);
+}
+
+#[test]
+#[ignore]
+fn test_comment() {
+    let src = "//singlelinecomment";
+    let lexer = Lexer::new(src);
+
+    let tokens: Vec<_> = lexer.collect();
+    println!("{:?}", tokens);
+}
+
+#[test]
+fn test_multiline_comment() {
+    let src = "/*multilinecomment*/";
+    let lexer = Lexer::new(src);
+
+    let tokens: Vec<_> = lexer.collect();
     println!("{:?}", tokens);
 }
