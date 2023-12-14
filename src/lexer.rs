@@ -7,6 +7,7 @@ pub struct Lexer<'a> {
     start: usize,
     current: usize,
     end: usize,
+    line: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -17,6 +18,7 @@ impl<'a> Lexer<'a> {
             start: 0,
             current: 0,
             end: 0,
+            line: 0,
         }
     }
 
@@ -52,8 +54,9 @@ impl<'a> Lexer<'a> {
             '>' => self.take_select('=', GreaterEqual, Greater),
             '<' => self.take_select('=', LessEqual, Less),
             '/' => self.comment_or(Slash),
+            '"' => self.string(),
             '\0' => Eof,
-            _ => Unimplemented(ch),
+            _ => Error(format!("Unimplemented character: {}", ch)),
         }
     }
 
@@ -100,7 +103,9 @@ impl<'a> Lexer<'a> {
     }
 
     fn advance_by(&mut self, value: i32) {
-        (self.current += value as usize);
+        for _ in 0..=value {
+            self.advance();
+        }
     }
 
     fn comment_or(&mut self, or: TokenKind) -> TokenKind {
@@ -115,6 +120,21 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    fn string(&mut self) -> TokenKind {
+        while self.peek(0) != '"' && !self.is_at_end() {
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            return TokenKind::Error("Unterminated String".into());
+        }
+        self.advance();
+        self.end = self.current;
+
+        let value = self.src[self.start + 1..self.end - 1].to_string();
+        TokenKind::String(value.to_string())
+    }
+
     fn take_single_line_comment(&mut self) -> std::string::String {
         while self.peek(0) != '\n' && !self.is_at_end() {
             self.advance();
@@ -126,6 +146,9 @@ impl<'a> Lexer<'a> {
 
     fn take_multi_line_comment(&mut self) -> std::string::String {
         while self.peek(0) != '*' && self.peek(1) != '/' && !self.is_at_end() {
+            if self.peek(0) == '\n' {
+                self.line += 1;
+            }
             self.advance();
         }
         self.advance_by(2);
@@ -143,6 +166,11 @@ impl<'a> Iterator for Lexer<'a> {
 }
 
 #[cfg(test)]
+
+fn print_token(tokens: impl Iterator<Item = Token>) {
+    println!("{:?}", tokens.collect::<Vec<Token>>());
+}
+
 #[ignore]
 #[test]
 fn test_scan_token() {
@@ -165,10 +193,19 @@ fn test_comment() {
 }
 
 #[test]
+#[ignore]
 fn test_multiline_comment() {
     let src = "/*multilinecomment*/";
     let lexer = Lexer::new(src);
 
     let tokens: Vec<_> = lexer.collect();
     println!("{:?}", tokens);
+}
+
+#[test]
+fn test_string() {
+    let src = "\"this is a string\"";
+    let lexer = Lexer::new(src);
+
+    print_token(lexer);
 }

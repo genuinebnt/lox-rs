@@ -46,7 +46,7 @@ pub enum TokenKind {
     Var,
     While,
     Eof,
-    Unimplemented(char),
+    Error(String),
 
     Comment(String),
 }
