@@ -55,8 +55,15 @@ impl<'a> Lexer<'a> {
             '<' => self.take_select('=', LessEqual, Less),
             '/' => self.comment_or(Slash),
             '"' => self.string(),
+            '\n' => {
+                self.line += 1;
+                Skip(ch)
+            }
+            '\r' | '\t' | ' ' => Skip(ch),
             '\0' => Eof,
-            _ => Error(format!("Unimplemented character: {}", ch)),
+            ch if ch.is_digit(2) => self.take_number(),
+            ch if ch.is_alphanumeric() => self.take_alpha(),
+            _ => Error(ch.into()),
         }
     }
 
@@ -151,10 +158,43 @@ impl<'a> Lexer<'a> {
             }
             self.advance();
         }
+        self.end = self.current;
         self.advance_by(2);
+
+        self.src[self.start + 2..self.end].to_string()
+    }
+
+    fn take_number(&mut self) -> TokenKind {
+        let mut count = 0;
+        while self.peek(0).is_digit(10) {
+            self.advance();
+            count += 1;
+        }
+
+        if self.peek(0) == '.' && self.peek(1).is_digit(10) {
+            self.advance();
+            count += 1;
+        }
+
+        while self.peek(0).is_digit(10) {
+            self.advance();
+            count += 1;
+        }
+
         self.end = self.current;
 
-        self.src[self.start + 2..self.end - 2].to_string()
+        let value = self.src[self.start..self.end].parse::<f64>().unwrap();
+        Number(value)
+    }
+
+    fn take_alpha(&mut self) -> TokenKind {
+        while self.peek(0).is_alphanumeric() {
+            self.advance();
+        }
+
+        self.end = self.current;
+        let value = &self.src[self.start..self.end];
+        Identifier(value.to_string())
     }
 }
 
@@ -171,41 +211,11 @@ fn print_token(tokens: impl Iterator<Item = Token>) {
     println!("{:?}", tokens.collect::<Vec<Token>>());
 }
 
-#[ignore]
 #[test]
-fn test_scan_token() {
-    let src = "{}(),.-+;*!!====>>=<<=";
+fn test_scanner() {
+    let contents = std::fs::read_to_string("src/content.txt").unwrap();
 
-    let lexer = Lexer::new(src);
-    let tokens: Vec<_> = lexer.collect();
-
-    println!("{:?}", tokens);
-}
-
-#[test]
-#[ignore]
-fn test_comment() {
-    let src = "//singlelinecomment";
-    let lexer = Lexer::new(src);
-
-    let tokens: Vec<_> = lexer.collect();
-    println!("{:?}", tokens);
-}
-
-#[test]
-#[ignore]
-fn test_multiline_comment() {
-    let src = "/*multilinecomment*/";
-    let lexer = Lexer::new(src);
-
-    let tokens: Vec<_> = lexer.collect();
-    println!("{:?}", tokens);
-}
-
-#[test]
-fn test_string() {
-    let src = "\"this is a string\"";
-    let lexer = Lexer::new(src);
+    let lexer = Lexer::new(&contents);
 
     print_token(lexer);
 }
