@@ -1,4 +1,5 @@
 use crate::token::*;
+use std::collections::HashMap;
 use TokenKind::*;
 
 pub struct Lexer<'a> {
@@ -8,10 +9,13 @@ pub struct Lexer<'a> {
     current: usize,
     end: usize,
     line: usize,
+    keywords: HashMap<&'a str, TokenKind>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(src: &'a str) -> Self {
+        let keywords = Self::create_keyword_map();
+
         Lexer {
             src,
             chars: src.char_indices().collect(),
@@ -19,7 +23,30 @@ impl<'a> Lexer<'a> {
             current: 0,
             end: 0,
             line: 0,
+            keywords,
         }
+    }
+
+    fn create_keyword_map() -> HashMap<&'a str, TokenKind> {
+        let mut keywords = HashMap::new();
+
+        keywords.insert("and", And);
+        keywords.insert("class", Class);
+        keywords.insert("else", Else);
+        keywords.insert("false", False);
+        keywords.insert("for", For);
+        keywords.insert("if", If);
+        keywords.insert("nil", Nil);
+        keywords.insert("or", Or);
+        keywords.insert("print", Print);
+        keywords.insert("return", Return);
+        keywords.insert("super", Super);
+        keywords.insert("this", This);
+        keywords.insert("true", True);
+        keywords.insert("var", Var);
+        keywords.insert("while", While);
+
+        keywords
     }
 
     fn scan_token(&mut self) -> Option<Token> {
@@ -62,7 +89,7 @@ impl<'a> Lexer<'a> {
             '\r' | '\t' | ' ' => Skip(ch),
             '\0' => Eof,
             ch if ch.is_digit(2) => self.take_number(),
-            ch if ch.is_alphanumeric() => self.take_alpha(),
+            ch if ch.is_alphanumeric() => self.take_identifier_or_keyword(),
             _ => Error(ch.into()),
         }
     }
@@ -187,14 +214,18 @@ impl<'a> Lexer<'a> {
         Number(value)
     }
 
-    fn take_alpha(&mut self) -> TokenKind {
+    fn take_identifier_or_keyword(&mut self) -> TokenKind {
         while self.peek(0).is_alphanumeric() {
             self.advance();
         }
 
         self.end = self.current;
         let value = &self.src[self.start..self.end];
-        Identifier(value.to_string())
+        self.keywords
+            .get(&value)
+            .clone()
+            .unwrap_or(&Identifier(value.to_string()))
+            .clone()
     }
 }
 
