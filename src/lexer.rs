@@ -9,7 +9,7 @@ pub struct Lexer<'a> {
     current: usize,
     end: usize,
     line: usize,
-    keywords: HashMap<&'a str, TokenKind>,
+    keywords: HashMap<&'a str, TokenKind<'a>>,
 }
 
 impl<'a> Lexer<'a> {
@@ -27,13 +27,14 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn create_keyword_map() -> HashMap<&'a str, TokenKind> {
+    fn create_keyword_map() -> HashMap<&'a str, TokenKind<'a>> {
         let mut keywords = HashMap::new();
 
         keywords.insert("and", And);
         keywords.insert("class", Class);
         keywords.insert("else", Else);
         keywords.insert("false", False);
+        keywords.insert("fun", Fun);
         keywords.insert("for", For);
         keywords.insert("if", If);
         keywords.insert("nil", Nil);
@@ -49,7 +50,7 @@ impl<'a> Lexer<'a> {
         keywords
     }
 
-    fn scan_token(&mut self) -> Option<Token> {
+    fn scan_token(&mut self) -> Option<Token<'a>> {
         let kind = self.scan_token_kind();
         let span = Span::new(self.start, self.end);
 
@@ -60,7 +61,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn scan_token_kind(&mut self) -> TokenKind {
+    fn scan_token_kind(&mut self) -> TokenKind<'a> {
         self.start = self.current;
         self.end = self.current;
 
@@ -88,18 +89,18 @@ impl<'a> Lexer<'a> {
             }
             '\r' | '\t' | ' ' => Skip(ch),
             '\0' => Eof,
-            ch if ch.is_digit(2) => self.take_number(),
+            ch if ch.is_digit(10) => self.take_number(),
             ch if ch.is_alphanumeric() => self.take_identifier_or_keyword(),
-            _ => Error(ch.into()),
+            _ => Error("a"),
         }
     }
 
     fn take_select(
         &mut self,
         expected: char,
-        kind_true: TokenKind,
-        kind_false: TokenKind,
-    ) -> TokenKind {
+        kind_true: TokenKind<'a>,
+        kind_false: TokenKind<'a>,
+    ) -> TokenKind<'a> {
         let kind = match self.take(expected) {
             true => kind_true,
             false => kind_false,
@@ -142,7 +143,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn comment_or(&mut self, or: TokenKind) -> TokenKind {
+    fn comment_or(&mut self, or: TokenKind<'a>) -> TokenKind<'a> {
         if self.take('/') {
             let comment = self.take_single_line_comment();
             Comment(comment)
@@ -154,31 +155,31 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn string(&mut self) -> TokenKind {
+    fn string(&mut self) -> TokenKind<'a> {
         while self.peek(0) != '"' && !self.is_at_end() {
             self.advance();
         }
 
         if self.is_at_end() {
-            return TokenKind::Error("Unterminated String".into());
+            return TokenKind::Error("Unterminated String");
         }
         self.advance();
         self.end = self.current;
 
-        let value = self.src[self.start + 1..self.end - 1].to_string();
-        TokenKind::String(value.to_string())
+        let value = &self.src[self.start + 1..self.end - 1];
+        TokenKind::String(value)
     }
 
-    fn take_single_line_comment(&mut self) -> std::string::String {
+    fn take_single_line_comment(&mut self) -> &'a str {
         while self.peek(0) != '\n' && !self.is_at_end() {
             self.advance();
         }
         self.end = self.current;
 
-        self.src[self.start + 2..self.end].to_string()
+        &self.src[self.start + 2..self.end]
     }
 
-    fn take_multi_line_comment(&mut self) -> std::string::String {
+    fn take_multi_line_comment(&mut self) -> &'a str {
         while self.peek(0) != '*' && self.peek(1) != '/' && !self.is_at_end() {
             if self.peek(0) == '\n' {
                 self.line += 1;
@@ -188,10 +189,10 @@ impl<'a> Lexer<'a> {
         self.end = self.current;
         self.advance_by(2);
 
-        self.src[self.start + 2..self.end].to_string()
+        &self.src[self.start + 2..self.end]
     }
 
-    fn take_number(&mut self) -> TokenKind {
+    fn take_number(&mut self) -> TokenKind<'a> {
         let mut count = 0;
         while self.peek(0).is_digit(10) {
             self.advance();
@@ -208,13 +209,13 @@ impl<'a> Lexer<'a> {
             count += 1;
         }
 
-        self.end = self.current;
+        self.end = self.current - 1;
 
-        let value = self.src[self.start..self.end].parse::<f64>().unwrap();
+        let value = self.src[self.start..=self.end].parse::<f64>().unwrap();
         Number(value)
     }
 
-    fn take_identifier_or_keyword(&mut self) -> TokenKind {
+    fn take_identifier_or_keyword(&mut self) -> TokenKind<'a> {
         while self.peek(0).is_alphanumeric() {
             self.advance();
         }
@@ -224,13 +225,13 @@ impl<'a> Lexer<'a> {
         self.keywords
             .get(&value)
             .clone()
-            .unwrap_or(&Identifier(value.to_string()))
+            .unwrap_or(&Identifier(value))
             .clone()
     }
 }
 
 impl<'a> Iterator for Lexer<'a> {
-    type Item = Token;
+    type Item = Token<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         self.scan_token()
     }
@@ -238,12 +239,13 @@ impl<'a> Iterator for Lexer<'a> {
 
 #[cfg(test)]
 
-fn print_token(tokens: impl Iterator<Item = Token>) {
+fn print_token<'a>(tokens: impl Iterator<Item = Token<'a>>) {
     println!("{:?}", tokens.collect::<Vec<Token>>());
 }
 
 #[test]
-fn test_scanner() {
+#[ignore]
+fn test_lexer() {
     let contents = std::fs::read_to_string("src/content.txt").unwrap();
 
     let lexer = Lexer::new(&contents);

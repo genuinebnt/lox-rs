@@ -1,5 +1,7 @@
+mod expr;
 mod lexer;
 mod lox;
+mod parser;
 mod token;
 
 use std::env::{self};
