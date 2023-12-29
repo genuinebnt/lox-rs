@@ -193,20 +193,16 @@ impl<'a> Lexer<'a> {
     }
 
     fn take_number(&mut self) -> TokenKind<'a> {
-        let mut count = 0;
         while self.peek(0).is_digit(10) {
             self.advance();
-            count += 1;
         }
 
         if self.peek(0) == '.' && self.peek(1).is_digit(10) {
             self.advance();
-            count += 1;
         }
 
         while self.peek(0).is_digit(10) {
             self.advance();
-            count += 1;
         }
 
         self.end = self.current - 1;

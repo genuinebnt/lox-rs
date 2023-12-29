@@ -14,13 +14,13 @@ pub enum ParserError<'a> {
 }
 
 #[derive(Debug)]
-struct Parser<'a> {
+pub struct Parser<'a> {
     tokens: Vec<Token<'a>>,
     current: usize,
 }
 
 impl<'a> Parser<'a> {
-    fn new(tokens: impl Iterator<Item = Token<'a>>) -> Parser<'a> {
+    pub fn new(tokens: impl Iterator<Item = Token<'a>>) -> Parser<'a> {
         Parser {
             tokens: tokens
                 .filter(|t| !(matches!(t.kind, TokenKind::Skip(_))))
@@ -29,7 +29,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
+    pub fn parse(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
         self.expression()
     }
 
@@ -98,8 +98,6 @@ impl<'a> Parser<'a> {
     fn primary(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
         let current = self.advance();
 
-        println!("{:?}", current);
-
         match current.kind {
             False | True | Nil => Ok(Expr::Literal(Literal::new(current))),
             Number(_) | String(_) => Ok(Expr::Literal(Literal::new(current))),
@@ -161,7 +159,7 @@ mod tests {
 
         let mut parser = Parser::new(lexer);
         match parser.parse() {
-            Ok(v) => println!("{:#?}", v),
+            Ok(v) => println!("{:}", v),
             Err(e) => println!("{:?}", e),
         }
     }

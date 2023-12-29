@@ -97,7 +97,12 @@ impl<'a> From<Token<'a>> for Literal<'a> {
 
 impl<'a> std::fmt::Display for Expr<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:}", self)
+        match self {
+            Expr::Binary(v) => write!(f, "{}", v),
+            Expr::Literal(v) => write!(f, "{}", v),
+            Expr::Grouping(v) => write!(f, "{}", v),
+            Expr::Unary(v) => write!(f, "{}", v),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::lexer::*;
+use crate::{lexer::*, parser::Parser};
 
 #[derive(Debug)]
 pub enum LoxError {
@@ -40,21 +40,24 @@ impl Lox {
     pub fn run_file(&mut self, path: &str) {
         self.contents = std::fs::read_to_string(path).unwrap();
 
-        let mut lexer = Lexer::new(&self.contents);
+        let lexer = Lexer::new(&self.contents);
 
-        println!("{:?}", lexer.collect::<Vec<_>>());
+        let mut parser = Parser::new(lexer);
+        parser.parse().unwrap();
     }
 
     pub fn run_prompt(&self) -> Result<(), LoxError> {
         let mut line = String::new();
 
         loop {
-            std::io::stdin().read_line(&mut line);
+            std::io::stdin().read_line(&mut line).unwrap();
             if line == "exit" {
                 break;
             }
-            let mut lexer = Lexer::new(&line);
-            println!("{:?}", lexer.collect::<Vec<_>>());
+            let lexer = Lexer::new(&line);
+
+            let mut parser = Parser::new(lexer);
+            parser.parse().unwrap();
         }
 
         Ok(())
