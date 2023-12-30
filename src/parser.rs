@@ -30,7 +30,19 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
-        self.expression()
+        self.comma()
+    }
+
+    pub fn comma(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
+        let mut expr = self.expression()?;
+
+        while let Comma = self.peek(0).kind {
+            let operator = self.advance();
+            let right = self.expression()?;
+            expr = Expr::Binary(Binary::new(expr, operator, right))
+        }
+
+        Ok(expr)
     }
 
     fn expression(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
@@ -142,6 +154,18 @@ impl<'a> Parser<'a> {
             Err(ParserError::UnexpectedToken(current))
         } else {
             Ok(self.advance())
+        }
+    }
+
+    fn synchronize(&mut self) {
+        use TokenKind::*;
+        while !self.is_at_end() {
+            let current = self.advance();
+
+            if let Class | Fun | Var | For | If | While | Print | Return | SemiColon = current.kind
+            {
+                return;
+            }
         }
     }
 }
