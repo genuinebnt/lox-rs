@@ -77,6 +77,8 @@ impl<'a> Lexer<'a> {
             '+' => Plus,
             ';' => SemiColon,
             '*' => Star,
+            '?' => QuestionMark,
+            ':' => Colon,
             '!' => self.take_select('=', BangEqual, Bang),
             '=' => self.take_select('=', EqualEqual, Equal),
             '>' => self.take_select('=', GreaterEqual, Greater),

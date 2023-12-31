@@ -12,6 +12,8 @@ pub enum TokenKind<'a> {
     SemiColon,
     Slash,
     Star,
+    QuestionMark,
+    Colon,
 
     // one or 2 char tokens
     Bang,
@@ -90,6 +92,8 @@ impl<'a> std::fmt::Display for Token<'a> {
             TokenKind::SemiColon => write!(f, ","),
             TokenKind::Slash => write!(f, "/"),
             TokenKind::Star => write!(f, "*"),
+            TokenKind::QuestionMark => write!(f, "?"),
+            TokenKind::Colon => write!(f, ":"),
             TokenKind::Bang => write!(f, "!"),
             TokenKind::BangEqual => write!(f, "!="),
             TokenKind::Equal => write!(f, "="),

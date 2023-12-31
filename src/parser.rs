@@ -46,7 +46,27 @@ impl<'a> Parser<'a> {
     }
 
     fn expression(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
-        self.equality()
+        self.ternary()
+    }
+
+    fn ternary(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
+        let mut expr = self.equality()?;
+
+        while let QuestionMark = self.peek(0).kind {
+            let left_operator = self.advance();
+            let middle = self.equality()?;
+            let right_operator = self.consume(TokenKind::Colon)?;
+            let right = self.equality()?;
+            expr = Expr::Ternary(Ternary::new(
+                expr,
+                left_operator,
+                middle,
+                right_operator,
+                right,
+            ));
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr<'a>, ParserError<'a>> {

@@ -6,6 +6,7 @@ pub enum Expr<'a> {
     Unary(Unary<'a>),
     Binary(Binary<'a>),
     Grouping(Grouping<'a>),
+    Ternary(Ternary<'a>),
 }
 
 #[derive(Debug)]
@@ -35,6 +36,15 @@ pub struct Binary<'a> {
 }
 
 #[derive(Debug)]
+pub struct Ternary<'a> {
+    left: Box<Expr<'a>>,
+    left_operator: Token<'a>,
+    middle: Box<Expr<'a>>,
+    right_operator: Token<'a>,
+    right: Box<Expr<'a>>,
+}
+
+#[derive(Debug)]
 pub struct Grouping<'a> {
     expr: Box<Expr<'a>>,
 }
@@ -59,6 +69,24 @@ impl<'a> Binary<'a> {
         Binary {
             left: Box::new(left),
             operator,
+            right: Box::new(right),
+        }
+    }
+}
+
+impl<'a> Ternary<'a> {
+    pub fn new(
+        left: Expr<'a>,
+        left_operator: Token<'a>,
+        middle: Expr<'a>,
+        right_operator: Token<'a>,
+        right: Expr<'a>,
+    ) -> Self {
+        Ternary {
+            left: Box::new(left),
+            left_operator,
+            middle: Box::new(middle),
+            right_operator,
             right: Box::new(right),
         }
     }
@@ -102,6 +130,7 @@ impl<'a> std::fmt::Display for Expr<'a> {
             Expr::Literal(v) => write!(f, "{}", v),
             Expr::Grouping(v) => write!(f, "{}", v),
             Expr::Unary(v) => write!(f, "{}", v),
+            Expr::Ternary(v) => write!(f, "{}", v),
         }
     }
 }
@@ -135,5 +164,15 @@ impl<'a> std::fmt::Display for Binary<'a> {
 impl<'a> std::fmt::Display for Grouping<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "(group {})", self.expr)
+    }
+}
+
+impl<'a> std::fmt::Display for Ternary<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "({} {} {} {} {})",
+            self.left, self.left_operator, self.middle, self.right_operator, self.right
+        )
     }
 }
