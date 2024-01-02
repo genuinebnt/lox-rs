@@ -11,7 +11,7 @@ pub enum Expr<'a> {
 
 #[derive(Debug)]
 pub struct Literal<'a> {
-    value: LiteralValue<'a>,
+    pub value: LiteralValue<'a>,
 }
 
 #[derive(Debug)]
@@ -24,29 +24,29 @@ pub enum LiteralValue<'a> {
 
 #[derive(Debug)]
 pub struct Unary<'a> {
-    operator: Token<'a>,
-    right: Box<Expr<'a>>,
+    pub operator: Token<'a>,
+    pub right: Box<Expr<'a>>,
 }
 
 #[derive(Debug)]
 pub struct Binary<'a> {
-    left: Box<Expr<'a>>,
-    operator: Token<'a>,
-    right: Box<Expr<'a>>,
+    pub left: Box<Expr<'a>>,
+    pub operator: Token<'a>,
+    pub right: Box<Expr<'a>>,
 }
 
 #[derive(Debug)]
 pub struct Ternary<'a> {
-    left: Box<Expr<'a>>,
-    left_operator: Token<'a>,
-    middle: Box<Expr<'a>>,
-    right_operator: Token<'a>,
-    right: Box<Expr<'a>>,
+    pub left: Box<Expr<'a>>,
+    pub left_operator: Token<'a>,
+    pub middle: Box<Expr<'a>>,
+    pub right_operator: Token<'a>,
+    pub right: Box<Expr<'a>>,
 }
 
 #[derive(Debug)]
 pub struct Grouping<'a> {
-    expr: Box<Expr<'a>>,
+    pub expr: Box<Expr<'a>>,
 }
 
 impl<'a> Literal<'a> {

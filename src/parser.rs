@@ -10,7 +10,7 @@ use crate::{
 pub enum ParserError<'a> {
     Eof,
     UnexpectedToken(Token<'a>),
-    UnmatchedToken,
+    UnexpectedBinaryOp(Token<'a>),
 }
 
 #[derive(Debug)]
@@ -106,15 +106,24 @@ impl<'a> Parser<'a> {
     }
 
     fn factor(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
-        let mut expr = self.unary()?;
+        let expr = self.unary();
 
-        while let Slash | Star = self.peek(0).kind {
-            let operator = self.advance();
-            let right = self.unary()?;
-            expr = Expr::Binary(Binary::new(expr, operator, right));
+        match expr {
+            Ok(mut expr) => {
+                while let Slash | Star = self.peek(0).kind {
+                    let operator = self.advance();
+                    let right = self.unary()?;
+                    expr = Expr::Binary(Binary::new(expr, operator, right));
+                }
+
+                Ok(expr)
+            }
+            Err(ParserError::UnexpectedBinaryOp(op)) => {
+                self.unary()
+                //Err(ParserError::UnexpectedBinaryOp(op))
+            }
+            Err(v) => Err(v),
         }
-
-        Ok(expr)
     }
 
     fn unary(&mut self) -> Result<Expr<'a>, ParserError<'a>> {
@@ -138,6 +147,8 @@ impl<'a> Parser<'a> {
                 self.consume(RightParen)?;
                 Ok(Expr::Grouping(Grouping::new(expr)))
             }
+            Minus | Plus | Star | Slash | Greater | GreaterEqual | Less | LessEqual | BangEqual
+            | EqualEqual => Err(ParserError::UnexpectedBinaryOp(current)),
             _ => Err(ParserError::UnexpectedToken(current)),
         }
     }
