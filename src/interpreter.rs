@@ -72,4 +72,9 @@ impl<'a> Interpreter {
             }
         }
     }
+
+    fn evaluate_binary(&mut self, expr: Binary<'a>) -> Result<Output<'a>, RuntimeError> {
+        let left = self.interpret(*expr.left)?;
+        let right = self.interpret(*expr.right)?;
+    }
 }
