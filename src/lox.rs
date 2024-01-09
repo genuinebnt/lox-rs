@@ -1,6 +1,7 @@
 use std::{fmt, io::Write};
 
 use crate::{
+    interpreter::{Interpreter, RuntimeError},
     lexer::*,
     parser::{Parser, ParserError},
 };
@@ -9,6 +10,7 @@ use crate::{
 pub enum LoxError {
     IoError(std::io::Error),
     ParserError(String),
+    RuntimeError(String),
 }
 
 impl std::error::Error for LoxError {}
@@ -31,11 +33,24 @@ impl From<ParserError<'_>> for LoxError {
     }
 }
 
+impl From<RuntimeError> for LoxError {
+    fn from(value: RuntimeError) -> Self {
+        match value {
+            RuntimeError::DivisionByZero => {
+                Self::RuntimeError("Runtime error division by zero".to_string())
+            }
+            RuntimeError::InvalidOperand => Self::RuntimeError("Invalid operand".to_string()),
+            RuntimeError::InvalidOperation => Self::RuntimeError("Invalid operation".to_string()),
+        }
+    }
+}
+
 impl fmt::Display for LoxError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::IoError(e) => write!(f, "IoError: {}", e),
             Self::ParserError(e) => write!(f, "Parser Error: {}", e),
+            Self::RuntimeError(e) => write!(f, "Runtime Error: {}", e),
         }
     }
 }
@@ -59,7 +74,11 @@ impl Lox {
 
         let mut parser = Parser::new(lexer);
 
-        println!("{}", parser.parse()?);
+        let expr = parser.parse()?;
+
+        let mut interpreter = Interpreter::new();
+
+        println!("{:?}", interpreter.interpret(expr)?);
 
         Ok(())
     }

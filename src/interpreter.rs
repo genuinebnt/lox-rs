@@ -1,6 +1,6 @@
 use crate::{expr::*, token::TokenKind};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Output {
     Number(f64),
     Boolean(bool),
@@ -27,6 +27,10 @@ pub enum RuntimeError {
 pub struct Interpreter;
 
 impl<'a> Interpreter {
+    pub fn new() -> Self {
+        Interpreter {}
+    }
+
     pub fn interpret(&mut self, expr: Expr<'a>) -> Result<Output, RuntimeError> {
         match expr {
             Expr::Literal(v) => self.evaluate_literal(v),
@@ -95,6 +99,24 @@ impl<'a> Interpreter {
                 (Output::String(l), Output::String(r)) => Ok(Output::String(format!("{}{}", l, r))),
                 _ => Err(RuntimeError::InvalidOperand),
             },
+            TokenKind::Greater => match (left, right) {
+                (Output::Number(l), Output::Number(r)) => Ok(Output::Boolean(l > r)),
+                _ => Err(RuntimeError::InvalidOperand),
+            },
+            TokenKind::GreaterEqual => match (left, right) {
+                (Output::Number(l), Output::Number(r)) => Ok(Output::Boolean(l >= r)),
+                _ => Err(RuntimeError::InvalidOperand),
+            },
+            TokenKind::Less => match (left, right) {
+                (Output::Number(l), Output::Number(r)) => Ok(Output::Boolean(l < r)),
+                _ => Err(RuntimeError::InvalidOperand),
+            },
+            TokenKind::LessEqual => match (left, right) {
+                (Output::Number(l), Output::Number(r)) => Ok(Output::Boolean(l <= r)),
+                _ => Err(RuntimeError::InvalidOperand),
+            },
+            TokenKind::BangEqual => Ok(Output::Boolean(left != right)),
+            TokenKind::EqualEqual => Ok(Output::Boolean(left == right)),
             _ => unreachable!("Unreachable code"),
         }
     }
